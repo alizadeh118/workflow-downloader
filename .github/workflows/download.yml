@@ -1,0 +1,40 @@
+name: Download from URL file
+
+on:
+  push:
+    paths:
+      - url.txt
+
+permissions:
+  contents: write
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Read URL
+        id: read_url
+        run: |
+          URL=$(cat url.txt)
+          echo "url=$URL" >> $GITHUB_OUTPUT
+
+      - name: Extract filename
+        id: extract_name
+        run: |
+          URL="${{ steps.read_url.outputs.url }}"
+          FILENAME=$(basename "$URL")
+          echo "filename=$FILENAME" >> $GITHUB_OUTPUT
+
+      - name: Download file
+        run: |
+          curl -L "${{ steps.read_url.outputs.url }}" -o "${{ steps.extract_name.outputs.filename }}"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          files: ${{ steps.extract_name.outputs.filename }}
